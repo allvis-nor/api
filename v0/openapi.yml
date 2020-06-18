@@ -1,0 +1,621 @@
+openapi: 3.0.2
+info:
+  title: Allvis NOR API
+  description: |-
+    The Allvis NOR public application programming interface (API)
+    provides access to data collected by Allvis NOR.  The API is
+    available to participating organizations upon request.
+
+    # Authentication
+
+    The API offers two forms of HTTP authentication:
+      - Basic (static API secret)
+      - Bearer (JSON Web Token)
+
+    All requests must present an Authorization header containing a
+    token in either one of the two authentication forms. Static
+    secrets are suitable for use by automated systems that run in a
+    controlled environment, while JWT tokens are primarily for use in
+    browser-based clients.
+
+    A valid token will grant access to API endpoints under `/org`
+    regarding approved organizations, and `/user` regarding the
+    associated user.
+
+    Requests can elicit one of the following errors as a result of
+    failed authentication:
+
+    - `401 Unauthorized` if the Authorization header or bearer token
+      is missing, invalid, or expired.
+    - `404 Not Found` for endpoints that regard other (unapproved)
+      organizations or users.
+
+  contact:
+    name: NSM
+    url: https://doc.allvis.no/
+    email: pentest@nsm.no
+  license:
+    name: GNU Affero General Public License
+    url: https://www.gnu.org/licenses/agpl-3.0.html
+  version: 1.0.0
+  x-logo:
+    url: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQQAAABkCAIAAADv6dmzAAAACXBIWXMAAAsTAAALEwEAmpwYAAAPt0lEQVR42u2deTxU6x/Hn5kxwzBlSSJdl1tab6IsyRKJylZpkYo2Kl1p58YtQlS3Uimlutq0SlptMeki7XWpFDeqq5+u7GQw2++Pw2mIcWZMpe73/fLH8zrP9n0953zO8/0+z3MMSXaACQIAACEyDAEAgBgAAMQAACAGAAAxAACIAQBADAAAYgAAEAMAgBgAAMQAACAGAAAxAACIAQBADAAAYgAAEAMAfHdioFBAacB/XgwMWbrf8oVv7yf6LV/IkKXDKAPfBBSqkobEG/WYPTV4nac0jWZupPe+vPLeX89goAGIGQDgvyQGGWma23Q7goUXODtK06gw7sD3JgYalbp2qWt+RjyNSiVcRaog8+Lapa7EqwBAdxfDCneXgsz4TWuW9FKUF6liL0X5TWuWFGTGL1/gDDcA+B7EQEIkZSUFsat3pS4AQAANAN1ADN4LZ7m7TPmspri7TPFeOAtuCdB9xbB8gXN+xoWw9V5fwJqw9V75GRcglgC+ClLCs1e6z97su+xLGqSuqrLFbzmFQtl1+BTcHgBiBgAAMQAAiAEAQAwAAGIAABADAIAYAADEAADfAlIwBJ+V21eODh88ACHE5fJ6DjYnmCUG2lo/aP7Q92Hu8/LK6m/1WaRQyGRyE5sNYvg2kJGmxUZtpVKpCKHC18XL/LZ0B6vmOtnuD/uVTCZXVdeaT/N4+br4M3WkrKQQExHCZrPnrwrsVHWK8j1PR4a+Lv7fEt9QIcUm24yd4TDe1EC3l6I8mUyurK55kJN3MfnmyQuJQoSx3mvBWONRba/y+bUf6kvLKh7mPr+alvHv+woQw2fE0dp8nIkBljYz1N15MObvV8XdQAyTyGQyQkhBvoejzdjwQyc/U0fSNJqZoS5CaNemta7eG4QXptGkzAx1lTv+3EVDXfWP7RvH6Ovw+fzc539nP8jlcLn91FQsxuiPNzNascjFfW3w/Zz2P6AfPEDTzFC3vLK6salJ8HoPOdkeDLn5Mx12BKw6FnvVf2tk3Yd6EMNnwbX1B65znWwDdx786la9KHxtZqTXnH756gv06DTJ8qLtuLgEptgt/KShnhgT0U9N5ezllIAdUf/871/BKWWlu8sKd5drJ3ZPc1+Xee9xR43MWxlw49b9NheVFOStzY18l7m5u0zR1xk6ydW7prYOAmgJo66qYtF6ap7T8kr+uvy2bf/v+4/HJTC9ftuWwMz63N3V1n3gcnnhgWt691IUrwWqlFRMRHA/NRX/rZEL1wQJKgEhVFldE7AjapanH40qFRMRLOp3YBVV1Wcvp5hMWcTMuqc7bOBmH6InTUEMIvDpo9+3T28rU4Ovblht3YfAnQfdVmw8cvbyF+iuuKQ0/NDJXorye4LWideC1wLnEUMHnr+WJuRsclL6rdCII717KYb6/iJGF6yGxoVrgurqWfNm2CvI9wAxSN41xxK37ufg4aPrNLtvxX6GnOzgAZq6wwZq9lPr4oS2eU/0s/xCRxvzmQ7WYqwaebpN43J5flv2CS+569Cpd+/LZziMV1FWEsPI9+WVyenZFArZRH8EiEGSmOiP6P9jPyx9+lLShcRmd9l+vBnBFw8Rju8OKsq+jP1pa/3waYHM+D+w3Lz087J0GezihpXueC19naGf1pphP/5m3MGSh0kPEmOyLkY/vRFb8ij52K5N2NquGDSx2R4+IRwud2fAqj69RXtSxxiMUFdVSc248/ZdqfCSbA7nVHwSjUqdMmGseHYWFL3BJnAQg0SnhWm2+B2KT0yPvZLassBCdRb97dgR6dn3VZSVsD9bK9NPl1D0fh6E5T5+ml/PamheQmHI4bVotFaLIhQKOXrHxqPhgfo6QwVnA4YsfbqdVUb84fkzHcQz9fHT/B1RMYryPfeG+IpU0XjkcIRQ+u0HRArfvP0QIWSk97N4RlJEmQBBDISQo8s4TbLE0qkZdyura249yMHDPgl6SvGJ6WwOB0vbfSKGSZYmePr8tVQiDfp7L3J2tMHd6LTMu/FJNwqK/sED2b0hPthqqRiERRx58vyl7TiT2VMnEq81WFsLIZSb9zeRwk+e/40QGqKtJZ6Fo3SGIITyi96AGCTGlEmWDDlZLH3uynWEEJ/Pxx9HvZ8HDRvUXyIdVVbXpGXexdKj9YYryvcUzJ1oaYwl6upZiTduddqaLF3Gq+WD8rfvSnVtXBwXrJ67fIPehNlhe49g10kk0nqvBeJZy+ZwPHxC2BzO9t9WqqkoE6ylJN8DIURwp7yiqgYhJJ4jOnzwAAvjUaVlFdn3cwgFM8KzDVUeMs94NqfV2IdbZ6WdXtqSxWmV1ScXzzJQ5Qg2aKD6DM8y6sOJEKyl9vxjgyqcbiUGV6dmH6me1ZCQltmiitRVHnNaJgfbX0MjJNLX2cvXJ1qMwTyciZbGpy8mY9cV5HuMHjkcS19LzcB9JGHv4AGaci1xxan4pOKSZh+dz+dv3hPtNt1OXVUFIWSsr0Mikfh8vhjW5uQVbIs87u+9cN9mXycPQotLPRhyCKEP9SyCwUkTmy3PYIhqWN8+vU/sCSKTyYE7DxI84tGJGDLvPgqY+gFL+yQzEJJpPyulbVbIjOYs/7RWWbfuPgpzbs4KSJdD6OM/rM+6+3ibS/PmyKb4VllfF81+aqYtjkQCM6uu5S7m5BW8ePlqUH9NhJDL5Akbtu3HPZyugD3oWHBsO84UF4O1mZEUhYLrkEhTHA4XT+sM0RbM4vP5Vs6edBmZrhv8+/7j9uNNJ1gYu023O37+WufeiIgLWXw+IpNJ7WYpKylgesahUaXU+iiPMzFY6jpNUb7nrsOnjsVeJbrMBS4QkdCZRGq+GbFXWz2F566kbljpjt2ViZbGV65ndL27D6yGa2mZM+zHI4SszQxpVCr2YptkOeZTV0o4z/IL35dXYltjEyyMk2Iios9eZmbdK6uoQgi12eoSGzaHs9h3c8aFw1v9ljOz7uHzjwTpaNI6Gh7YUZX8wtde/tsuJqcT7wXE0AkkEgmPDqtr6lJu3m4thuuYGLAwWiJiwCSHiaEHQ87UUJeZdY9MJlubG2G5F5PSCU5BHC53xcbtx/cEYVOKmZEedmrjxctXqZn3Yq9cl9RPZzx5/nLL3qMbV3lEhv7quGC18MINDY0IIRkZaULLQRSyNI1aXlnVgUuZ8rq4pM20471oFovVOHb6EoKnMEAMRDEfPfJHdTUsXVpescpjdpsC1TV18j0Z2KtXRVmptKyi651e//NOVXUtFjXaWZkys+4Z6Q1TUmg+8Xbuairxpi6l3Jw4x2ub/4qRwwfjFwf11xzUX/OXeTNuP8xdExT++Gl+123eERXjYG1uZWq4cJZj9BlhG+FllVUIIYUehMKAngwGQqiqurbd3BNxCZ+eTaJKSa1wd/FbvkDUKA5WkzrBrWV7ASGkraWxcZVHmz9MCQghKQpl1mQbiXTaxGbj87vtOBMksKj67n155t3HIrWW/SDXzMndytlz37HYZ/mFgoHy6JHD084eMB89sus2c7hcD5+QxiZ22K9eGuqqQkq+KX6HBfdEmh3U/0eE0KvWr3/hhO07WlpW4ek2HQvnQAySgSEn62gzVhTlSGzDAX/9a6ir/jy4/0SL5kXVuAQmj8cTo8HbD3N9QnYb2LlpGNovWhuck1eAXZeRpoUHrJaIzXkFRaER0Qw52f2h6/Eoqx1xPsxBCBmP0iHSpqHeMITQnUdPiJuBndSSolB2bFwJbpLEmG5nhR95eJZfWPjmbbvFdIcN6qemghAaoq01SmfIg5y8rnedcedRSWkZtni/ZM40fB8j9sp14o2MMzHAfj2jntVwrWVFuKKq+syl5EvJ6dmXj2hraWAvaWUlBSyq7iLhh046WJtZjBnlMXvKpZSb7Za5eftRPavBwcacEUCv62yBdZajDUIoKf2WSGaciEvwmD3Vcoz+ZJuxHZkBYhANVwEfaZnflo7CTXeXKbuD1uJVJCIGHo8Xl8D0mj8TITR/pj128VVxiUghr9f8mRMsjLEFn376toKfubAaGu88eoKJASFEJxbOdgqXy1vsE5p9+UiI7y9/PStot0xNbd3J+ESP2VNXL5kbFH5ISGsO1mYjhg7Muv/Xk+cvRR29dSG7Us/sD/PzSvnzNquhEdykLqGt9QO+ySX8KbyQeANf3plpby0jTZOMp9QyCeAL8+dFCZ0RQlfTMvCYcvuGFYKGaair2piPxtKV1TUl/5ZJatxevHwVvOuwHF1mb4hPh2793iPlldWrF8+xGDOqozIa6qrhgWs4XO76sL1imJH9IDf2auqP6mr4xiiIQXzmOn2cFoQ7JxVV1fjCv3xPhoO1uUQMeJCT1+Zr5nMiiuHE+QT8neo6za4gMz56x8at/t4xEcEPk07i56IPnIjjcLkSHLrdf5y+8+jJ0IE/dVTg3/cV7uuCEULno7YtmjX50wDDfPTI5JN71VSUA7ZHiT3T/rYtsp7VsHrxHOEBPYihs3EhkwUPn3X6FApuCQs6V11EcI8vr6Do6QvRvAU2hzNt8Tr8WJ6Sgryzo43X/JlTJ1riftGFxBtb9x2T7OjxeLwlvqHCnZOUm7enL/ZtamLvCV73hHluq7/3MrcZHrOnBqzy+DPuUOKJPX1Ve68P29uVXyYoLikNP3SKLiNN8NdFQAztY2VqgB+CzysoepZf2IlDcv1P/LCQ5Rh9LJ6WhKeU2q4wRHogzJzctx848b68sk3WX8/y3dcFu3pvkMgpkjYUFL0RHg8ghFIz7uhYz4o8HisrI+01f+bvG1bs2rTGZ9m8wdpacQlMI/t5e6LPdD2gf/P23ZQJFvg34kIgyQ4wEZK9bDzr4wGk04xjmTJEsjwsWB/PJp1jHL75MWuhOevj2aQ4uQPMjweQ5pk2CJ5NikylgyYlHgX1VVWhS0vX1n14UfhaIstHkpqHtbU0VFV6SVEopWUVBUVvGhqbvrwZsJr0H6Kg6B/cZepW8Hi8Fy9ffZn/6wFuEgCAGAAAxAAAIAYAADEAAIgBACRCJ0urkal0Lg95WrHUFHhfxqCSKvL+NHoUEzYZgG4mBoRQFJMexaR7WrG+gDWBF+T2p4EMgO4qBowv8IwK7mEDAMQMAPANioGPUHmd+NXLakGHwLfpJrXjOKXS/7hBX2pV7zm+QaSKFXXkyDSZA2mybC6MP/BdiAEh1MRFe1Jko5h0J4NGwlVIuv6KjRwSDD3wXYkBo5FDOp1NNPaNyYIoGYAAGgC6NxSqkobEG80vkWrikEZocHYnyx7JkGFzwSkCvgE6+dKtSzoj87k8kAEAbhJCoAQAxAAAIAYAADEAAIgBAEAMAABiAAAQAwCAGAAAxAAAIAYAADEAAIgBAAAQAwCAGAAAxAAAIAYAADEAAIgBAIjzf9ia7dJIIOSzAAAAAElFTkSuQmCC
+    backgroundColor: "#0A243B"
+    altText: Allvis NOR
+
+servers:
+- url: https://api.allvis.no/{basePath}
+  description: API v0
+  variables:
+    basePath:
+      default: v0
+
+components:
+  securitySchemes:
+    Basic:
+      type: http
+      description: |-
+        Long lived API secrets, e.g., for machine processing. Tokens
+        are provided upon request.
+      scheme: basic
+    Bearer:
+      type: http
+      description: |-
+        Shorter lived tokens, e.g., for interactive use.
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    204:
+      description: No Content
+    400:
+      description: Bad Request
+      content:
+        application/json:
+          example:
+            error: Bad Request
+    401:
+      description: Unauthorized
+      content:
+        application/json:
+          example:
+            error: Unauthorized
+    403:
+      description: Forbidden
+      content:
+        application/json:
+          example:
+            error: Forbidden
+    404:
+      description: Not Found
+      content:
+        application/json:
+          example:
+            error: Not Found
+
+tags:
+  - name: Organizations
+    description: |-
+      This is the starting point for all resources associated with
+      organizations. All resources, such as networks and services, are
+      logically placed under the organization's namespace, e.g.,
+      `/org/nsm/`.
+  - name: Networks
+    description: |-
+      Networks contain IPv4 networks in CIDR-notation. Networks are
+      organized in groups, e.g., to separate between physical
+      locations, types of networks, or other desired partitions.
+  - name: Services
+    description: |-
+      A service is defined as the communication channel an IP address
+      exposes on a port, such as a web server.
+  - name: Users
+    description: |-
+      Users are entities that can interact with the system, such as:
+
+      - Contacts (persons or e-mail addresses) who can log in or receive
+        notifications.
+      - API secrets that can be used to retrieve data from the API.
+  - name: User
+    description: |-
+      A user is an entity that can use the API. This entity can either
+      be a **token** if authenticated with an API secret through Basic
+      authorization, or a **contact** if authenticated with a JWT
+      through Bearer authorization.
+paths:
+  /org:
+    get:
+      summary: Get organizations
+      description: |-
+        Returns all organizations that the user has access to as an
+        array of objects with the following members:
+
+        - `id` is the organization ID, which is part of the
+            organization-specific resource paths.
+        - `name` is the name of the organization.
+        - `orgno` is the organization number as listed in the
+          Norwegian central registries.
+        - `url` is the path that should be prefixed to all resource
+          endpoints for this organization.
+
+        This endpoint can also be used to check whether a token is
+        valid.  It will will always return a `401` error if
+        authentication fails, otherwise `200`. This behavior is
+        similar to that of the `/user` endpoint.
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              example:
+                - id: "eeo"
+                  name: Enterprise Example Organization
+                  orgno: "111111111"
+                  url: /org/eeo
+                - id: "seo"
+                  name: Startup Example Organization
+                  orgno: "222222222"
+                  url: /org/seo
+        401:
+          $ref: '#/components/responses/401'
+      tags:
+        - Organizations
+
+  /org/{organization_id}:
+    get:
+      summary: Get organization
+      description: |
+        Returns details for a specific organization as an object. The
+        members are the same as for the `/org` endpoint, with an
+        additional `stats` member. This is a nested object with the
+        following members:
+
+        - `addresses` reflects the total number of IP addresses in all
+          network groups combined.
+        - `services` reflects the total number of exposed ports.
+        - `vulnerabilities` reflects the total number of
+          vulnerabilities across all services.
+        - `rate` reflects the maximum number of packets per second for
+          all of the organization's network groups combined.
+      parameters:
+        - name: organization_id
+          in: path
+          description: Shorthand organization identifier (lowercase string)
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              example:
+                id: "eeo"
+                name: Enterprise Example Organization
+                orgno: "111111111"
+                url: /org/eeo
+                stats:
+                  addresses: 35
+                  services: 24
+                  vulnerabilities: 0
+                  rate: 25
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+      tags:
+        - Organizations
+
+  /org/{organization_id}/groups:
+    get:
+      summary: Get groups
+      description: |-
+        Returns groups of networks for a specific organization, as an
+        array of objects. Each object contains the following members:
+
+        - `id` is a globally unique identifier, generated by the API.
+        - `name` is a user-chosen label for a group of networks,
+          intended to distinguish different logical partitions, e.g.,
+          physical locations.
+        - `description` is an optional field for details about a group
+          of networks.
+        - `rate` reflects the maximum number of packets per second
+          sent to this group during scanning.
+        - `active` indicates whether scanning and probing is enabled
+          for this group.
+        - `networks` is an array of objects, each containing an
+          `inetnum` and `name` property.
+      parameters:
+        - name: organization_id
+          in: path
+          description: Shorthand organization identifier (lowercase string)
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              example:
+              - id: a6709b76-d37d-11e8-8324-1b524e2c429b
+                name: Example group 1
+                description: >-
+                  Example group with two networks and a defined scan
+                  rate of 8 packets per second, i.e., 4 packets per
+                  second per group.
+                rate: 8
+                active: true
+                networks:
+                  - inetnum: 192.0.2.0/24
+                    name: TEST-NET-1
+                  - inetnum: 198.51.100.0/24
+                    name: TEST-NET-2
+              - id: c64f9654-d37d-11e8-b1e6-6f629178f4be
+                name: Example group 2
+                description: >-
+                  Example group with one network and automatic scan
+                  rate (packets per second)
+                rate: null
+                active: true
+                networks:
+                  - inetnum: 203.0.113.0/24
+                    name: TEST-NET-3
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+      tags:
+        - Networks
+
+  /org/{organization_id}/groups/{group_id}:
+    get:
+      summary: Get group
+      description: Returns a single group of networks for a specific organization
+      parameters:
+        - name: organization_id
+          in: path
+          description: Shorthand organization identifier (lowercase string)
+          required: true
+          schema:
+            type: string
+        - name: group_id
+          in: path
+          description: Group identifier (UUID)
+          required: true
+          schema:
+            type: uuid
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              example:
+                id: a6709b76-d37d-11e8-8324-1b524e2c429b
+                name: Example group 1
+                description: >-
+                  Example group with two networks and a defined scan
+                  rate of 8 packets per second, i.e., 4 packets per
+                  second per group.
+                rate: 8
+                active: true
+                networks:
+                  - inetnum: 192.0.2.0/24
+                    name: TEST-NET-1
+                  - inetnum: 198.51.100.0/24
+                    name: TEST-NET-2
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+      tags:
+        - Networks
+
+  /org/{organization_id}/networks:
+    get:
+      summary: Get networks
+      description: |-
+        Returns an array of networks assigned to an organization. Each
+        network is an object with the following members:
+
+          - `inetnum` is the CIDR representation of the network.
+          - `name` is the user-supplied network name.
+          - `group` is the ID of the group this network is associated
+            with, as returned by the `/groups` endpoint.
+      parameters:
+        - name: organization_id
+          in: path
+          description: Shorthand organization identifier (lowercase string)
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              example:
+                - inetnum: 192.0.2.0/24
+                  name: TEST-NET-1
+                  group: a6709b76-d37d-11e8-8324-1b524e2c429b
+                - inetnum: 198.51.100.0/24
+                  name: TEST-NET-2
+                  group: a6709b76-d37d-11e8-8324-1b524e2c429b
+                - inetnum: 203.0.113.0/24
+                  name: TEST-NET-3
+                  group: c64f9654-d37d-11e8-b1e6-6f629178f4be
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+      tags:
+        - Networks
+
+  /org/{organization_id}/services:
+    parameters:
+      - name: organization_id
+        in: path
+        description: Shorthand organization identifier (lowercase string)
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: inetnum
+        schema:
+          type: string
+        description: Network identifier (CIDR)
+      - in: query
+        name: port
+        schema:
+          type: integer
+        description: Port (0-65535)
+      - in: query
+        name: protocol
+        schema:
+          type: string
+          enum:
+            - tcp
+            - udp
+        description: Transport protocol
+      - in: query
+        name: tags
+        schema:
+          type: string
+        description: Service tags (e.g. `protocol:http`)
+    head:
+      summary: Count services
+      description: |
+        Returns the number of services for an organization in the
+        `Allvis-Item-Count` response header. The enumerated set of
+        services can be limited by passing one or more query
+        parameters.
+      tags:
+        - Services
+      responses:
+        200:
+          description: OK
+          headers:
+            Allvis-Item-Count:
+              schema:
+                type: integer
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+    get:
+      summary: Get services
+      description: |-
+        Returns services for an organization, as an array of objects
+        with the following members:
+
+          - `inetnum` is the IP address of the service.
+          - `port` is the TCP or UDP port of the service.
+          - `protocol` is either `tcp` or `udp`.
+          - `first_seen` is the time when the service was first seen
+            as active by the system. In the case of TCP, this is the
+            time the port was first seen as open, i.e. a SYN/ACK
+            response was received.
+          - `last_seen` is the time the service was last seen as
+            active.
+          - `tags` is a list of service tags as produced while probing
+            the service, e.g. `protocol:http` or `service:vpn`.
+
+        The search can be narrowed down by passing one or more query
+        parameters, such as to search by IP address, port or tag.
+
+        If the `limit` query parameter is used, the
+        `Allvis-Item-Count` response header can be used to determine
+        the total number of services that match your query.
+      parameters:
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum:
+              - inetnum
+              - -inetnum
+              - port
+              - -port
+              - first_seen
+              - -first_seen
+              - last_seen
+              - -last_seen
+          description: |-
+            Field to sort results by (default order is ascending,
+            prefix with '-' for descending)
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Maximum number of services to return per request
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          description: Offset into result set
+      responses:
+        200:
+          description: OK
+          headers:
+            Allvis-Item-Count:
+              schema:
+                type: integer
+          content:
+            application/json:
+              example:
+                - inetnum: 192.0.2.1
+                  port: 80
+                  protocol: tcp
+                  first_seen: 2018-08-19T23:15:30.000Z
+                  last_seen: 2018-08-26T23:12:53.000Z
+                  tags:
+                    - protocol:http
+                - inetnum: 192.0.2.2
+                  port: 80
+                  protocol: tcp
+                  first_seen: 2018-08-19T23:15:31.000Z
+                  last_seen: 2018-08-26T23:12:54.000Z
+                  tags:
+                    - protocol:http
+                    - software:nginx
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+      tags:
+        - Services
+
+  /org/{organization_id}/contacts:
+    get:
+      tags:
+        - Users
+      summary: Get contacts
+      description: |-
+        Returns contacts for an organization, as an array of objects
+        with the following members:
+
+        - `id` is the contact ID.
+        - `name` is the name of the contact.
+        - `email` is the e-mail address of the contact, and is used for
+          sending notifications.
+        - `phone` is the user-provided phone number of the contact.
+        - `access` is the access level of the contact for this
+          organization: "rw" if read-write, "ro" if read-only, or null
+          if the contact should not have access.
+      parameters:
+        - name: organization_id
+          in: path
+          description: Shorthand organization identifier (lowercase string)
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              example:
+                - id: 6f7a92a2-700c-11ea-8c6a-6320c1bd6f23
+                  name: John Smith
+                  email: john@example.com
+                  phone: "01234567"
+                  access: rw
+                - id: 0f9ed8ea-700f-11ea-b4a0-2f268775d47e
+                  name: Mary Johnson
+                  email: mary@example.com
+                  phone: "76543210"
+                  access: ro
+                - id: 20286a3c-78f7-11ea-8d0c-2f33790621ac
+                  name: James Williams
+                  email: james@example.com
+                  phone: "+31 918273642"
+                  access: null
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+
+  /org/{organization_id}/tokens:
+    get:
+      tags:
+        - Users
+      summary: Get API tokens
+      description: |-
+        Returns API tokens for an organization, as an array of objects with
+        the following members:
+
+        - `id` is the token ID, which is presented as the username part
+          during Basic authentication.
+        - `name` is the user-provided token name.
+        - `access` is the access level of the token for this
+          organization: "rw" if read-write, "ro" if read-only, or null
+          if the token should not grant access.
+
+        Note that you cannot retrieve the token itself, as it is not
+        stored in cleartext on the server. If you have lost your token,
+        please request a new one.
+      parameters:
+        - name: organization_id
+          in: path
+          description: Shorthand organization identifier (lowercase string)
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              example:
+                - id: 355837ec-7015-11ea-bb12-171718b9d9b4
+                  name: My read-only token
+                  access: ro
+                - id: 39e696fa-7015-11ea-b7f3-f7a249f107e8
+                  name: My read-write token
+                  access: rw
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+
+  /user:
+    get:
+      summary: Get user
+      description: |-
+        Returns information about the current user, as an object
+        containing at least the following members:
+
+          - `type` is "token" if an API secret was used to
+            authenticate, or "contact" if a JWT was used.
+          - `id` is the unique identifier of the token or contact.
+          - `name` is the human-friendly name of the user, either the
+            contact's real name or the token's user-provided name.
+
+        If `type` is "contact", the following members are also present:
+
+          - `email` is the e-mail address of the contact, and is used for
+            sending notifications.
+          - `phone` is the user-provided phone number of the contact.
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              examples:
+                Contact:
+                  value:
+                    type: contact
+                    id: 6f7a92a2-700c-11ea-8c6a-6320c1bd6f23
+                    name: John Smith
+                    email: john@example.com
+                    phone: "01234567"
+                Token:
+                  value:
+                    type: token
+                    id: 355837ec-7015-11ea-bb12-171718b9d9b4
+                    name: My read-only token
+
+        401:
+          $ref: '#/components/responses/401'
+      tags:
+        - User
