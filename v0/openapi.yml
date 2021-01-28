@@ -44,11 +44,8 @@ info:
     altText: Allvis NOR
 
 servers:
-- url: https://api.allvis.no/{basePath}
+- url: https://api.allvis.no/v0
   description: API v0
-  variables:
-    basePath:
-      default: v0
 
 components:
   securitySchemes:
